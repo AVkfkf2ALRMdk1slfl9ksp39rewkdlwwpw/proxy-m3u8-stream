@@ -1,0 +1,49 @@
+name: Proxy M3U8 Stream
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install express node-fetch
+
+      - name: Start server
+        run: |
+          echo "const express = require('express');
+          const fetch = require('node-fetch');
+          const app = express();
+          const PORT = process.env.PORT || 3000;
+
+          app.get('/proxy', async (req, res) => {
+              const url = 'http://154.70.152.44:2103/play/live.php?mac=00:1A:79:E4:48:01&stream=104974&extension=m3u8';
+
+              try {
+                  const response = await fetch(url);
+                  const data = await response.text();  # استخدم text للحصول على نص M3U8
+                  res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');  # نوع الملف هو M3U8
+                  res.setHeader('Access-Control-Allow-Origin', '*');
+                  res.status(200).send(data);
+              } catch (error) {
+                  res.status(500).send('حدث خطأ أثناء توجيه الطلب.');
+              }
+          });
+
+          app.listen(PORT, () => {
+              console.log('Server is running on port ' + PORT);
+          });" > server.js
+
+          node server.js
